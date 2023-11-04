@@ -26,6 +26,9 @@ let enemyHealth = 30;
 let myMana = 0;
 let myHealth = 30;
 let turn = 0;
+let myDeck = null;
+let opponentDeck = null;
+let position = null;
 
 // Fonction pour déterminer la plage de coût d'une carte
 function getCostRange(cost, cardType) {
@@ -91,6 +94,8 @@ function attackWithCard(myCard, opponentCards, locationCount) {
         const targetCard = opponentCards.find(card => card.instanceId === targetInstanceId);
         if (myCard.defense - targetCard.attack <= 0 && !myCard.abilities.includes('W')) {
             locationCount -= 1
+            console.error('cardId:', myCard.instanceId)
+            console.error('cardDefense:', myCard.defense)
         }
         if (targetCard.abilities.includes('W')) {
             targetCard.abilities = targetCard.abilities.replace('W', '-');
@@ -104,6 +109,7 @@ function attackWithCard(myCard, opponentCards, locationCount) {
     } else {
         enemyHealth -= myCard.attack
     }
+    console.error("locationCount:", locationCount)
 
     return `ATTACK ${myCard.instanceId} ${targetInstanceId};`;
 }
@@ -118,6 +124,7 @@ function canFinish(cardsOnField, opponentCards, enemyHealth) {
 // game loop
 while (true) {
     locationCount = 0
+    turn += 1
     let result = "";
     for (let i = 0; i < 2; i++) {
 
@@ -127,17 +134,26 @@ while (true) {
         const playerDeck = parseInt(inputs[2]);
         const playerRune = parseInt(inputs[3]);
         const playerDraw = parseInt(inputs[4]);
-
-        if (i == 1) {
-            myMana = playerMana
-            if (turn > 3) {
-                myMana += 1
+        if (turn < 10) {
+            if (i == 0) {
+                myDeck = playerDeck
             }
-            myHealth = playerHealth
-            console.error('mana at start:', myMana)
+            if (i == 1) {
+                opponentDeck = playerDeck
+            }
         }
-        if (i == 2) {
+        if (i == 0) {
+            myMana = playerMana
+            myHealth = playerHealth
+        }
+        console.error('myMana :', myMana)
+        console.error('turn :', turn)
+        console.error('position :', position)
+        if (i == 1) {
             enemyHealth = playerHealth
+        }
+        if (myDeck != null && opponentDeck != null) {
+            myDeck < opponentDeck ? position = 2 : position = 1
         }
 
     }
@@ -191,8 +207,6 @@ while (true) {
             const adjustedPower = currentPercentage < desiredPercentage ? calcMediumPower * 1.8 : calcMediumPower;
 
             // console.error('calcMediumPower:', calcMediumPower)
-
-            console.error('adjustedPower:', adjustedPower)
             // console.error('cardPickCount :', cardPickCount )
             const cardAlreadyPicked = cardPickCount[cardNumber] >= 3;
             if (adjustedPower > bestMediumPower && !cardAlreadyPicked) {
@@ -215,7 +229,6 @@ while (true) {
             if (costRange) costRanges[costRange].currentCount++;
 
         } else {
-            turn += 1
             if (location === -1) {
                 opponentCards.push({
                     cardNumber,
@@ -337,7 +350,7 @@ while (true) {
                 // item bleu
                 else if (spell.cardType === 3) {
                     if (myMana >= spell.cost && (myHealth + spell.myHealthChange) <= 60) {
-                        result += `USE ${spell.instanceId};`;
+                        result += `USE ${spell.instanceId} -1;`;
                         myMana -= spell.cost;
                         myHealth += spell.myHealthChange;
                     }
@@ -371,6 +384,23 @@ while (true) {
         } else {
             for (let myCard of attackableCards) {
                 result += attackWithCard(myCard, opponentCards, locationCount);
+            }
+        }
+
+        let summonableCardsForEnd = cards.filter(card => card.location === 0 && card.cost <= myMana && card.cardType === 0);
+        summonableCardsForEnd.sort((a, b) => b.cost - a.cost);
+
+        for (let card of summonableCardsForEnd) {
+
+            if (locationCount < 6 && myMana >= card.cost) {
+                result += `SUMMON ${card.instanceId};`;
+                myMana -= card.cost;
+                locationCount += 1;
+                let cardIndex = cards.findIndex(c => c.instanceId === card.instanceId);
+                if (cardIndex !== -1) {
+                    cards[cardIndex].location = 1;
+                    cards[cardIndex].justSummoned = true;
+                }
             }
         }
         console.log(result)
