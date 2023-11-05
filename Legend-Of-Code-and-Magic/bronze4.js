@@ -1,7 +1,48 @@
+/**
+ * Auto-generated code below aims at helping you parse
+ * the standard input according to the problem statement.
+ **/
+const costRanges = {
+    zero: { min: 0, max: 0, desiredPercentage: 0.033, currentCount: 0 },
+    un: { min: 1, max: 1, desiredPercentage: 0.1, currentCount: 0 },
+    deux: { min: 2, max: 2, desiredPercentage: 0.133, currentCount: 0 },
+    trois: { min: 3, max: 3, desiredPercentage: 0.134, currentCount: 0 },
+    quatre: { min: 4, max: 4, desiredPercentage: 0.133, currentCount: 0 },
+    cinq: { min: 5, max: 5, desiredPercentage: 0.134, currentCount: 0 },
+    six: { min: 6, max: 6, desiredPercentage: 0.1, currentCount: 0 },
+    high: { min: 7, max: 12, desiredPercentage: 0.133, currentCount: 0 },
+    item: { desiredPercentage: 0.1, currentCount: 0 }
+};
+const CHARGE_BONUS = 2;
+const GUARD_BONUS = 2.4;
+const BREAKTHROUGH_BONUS = 2.2;
+const DRAIN = 2.3;
+const LETHAL = 2.4;
+const WARD = 2.4;
+let totalCardsToSelect = 0;
+let cardPickCount = {};
+let locationCount = 0;
+let enemyHealth = 30;
+let myMana = 0;
+let myHealth = 30;
+let turn = 0;
+let myDeck = null;
+let opponentDeck = null;
+let position = null;
 
-
-
-
+// Fonction pour déterminer la plage de coût d'une carte
+function getCostRange(cost, cardType) {
+    if (cardType != 0) {
+        return 'item';
+    } else {
+        for (const range in costRanges) {
+            if (cost >= costRanges[range].min && cost <= costRanges[range].max) {
+                return range;
+            }
+        }
+    }
+    return null;
+}
 // Fonction pour logique d'attaque
 function attackWithCard(myCard, opponentCards, locationCount) {
 
@@ -53,8 +94,8 @@ function attackWithCard(myCard, opponentCards, locationCount) {
         const targetCard = opponentCards.find(card => card.instanceId === targetInstanceId);
         if (myCard.defense - targetCard.attack <= 0 && !myCard.abilities.includes('W')) {
             locationCount -= 1
-            console.error('cardId:', myCard.instanceId)
-            console.error('cardDefense:', myCard.defense)
+            // console.error('cardId:', myCard.instanceId)
+            // console.error('cardDefense:', myCard.defense)
         }
         if (targetCard.abilities.includes('W')) {
             targetCard.abilities = targetCard.abilities.replace('W', '-');
@@ -68,7 +109,7 @@ function attackWithCard(myCard, opponentCards, locationCount) {
     } else {
         enemyHealth -= myCard.attack
     }
-    console.error("locationCount:", locationCount)
+    // console.error("locationCount:", locationCount)
 
     return `ATTACK ${myCard.instanceId} ${targetInstanceId};`;
 }
@@ -80,11 +121,53 @@ function canFinish(cardsOnField, opponentCards, enemyHealth) {
     return totalAttackPower >= enemyHealth && !hasGuard;
 }
 
+function calculatePotential(card) {
+
+}
+
 // game loop
 while (true) {
     locationCount = 0
     turn += 1
     let result = "";
+    for (let i = 0; i < 2; i++) {
+
+        var inputs = readline().split(' ');
+        const playerHealth = parseInt(inputs[0]);
+        const playerMana = parseInt(inputs[1]);
+        const playerDeck = parseInt(inputs[2]);
+        const playerRune = parseInt(inputs[3]);
+        const playerDraw = parseInt(inputs[4]);
+        if (turn < 10) {
+            if (i == 0) {
+                myDeck = playerDeck
+            }
+            if (i == 1) {
+                opponentDeck = playerDeck
+            }
+        }
+        if (i == 0) {
+            myMana = playerMana
+            myHealth = playerHealth
+        }
+        // console.error('myMana :', myMana)
+        // console.error('turn :', turn)
+        // console.error('position :', position)
+        if (i == 1) {
+            enemyHealth = playerHealth
+        }
+        if (myDeck != null && opponentDeck != null) {
+            myDeck < opponentDeck ? position = 2 : position = 1
+        }
+
+    }
+    var inputs = readline().split(' ');
+    const opponentHand = parseInt(inputs[0]);
+    const opponentActions = parseInt(inputs[1]);
+    for (let i = 0; i < opponentActions; i++) {
+        const cardNumberAndAction = readline();
+
+    }
 
     let cards = [];
     let opponentCards = [];
@@ -123,12 +206,21 @@ while (true) {
         actualInstance = instanceId
         if (instanceId === -1) {
             const costRange = getCostRange(cost, cardType);
-            const currentPercentage = costRange ? costRanges[costRange].currentCount / 30 : 0;
+            const currentCount = costRange ? costRanges[costRange].currentCount : 0;
             const desiredPercentage = costRange ? costRanges[costRange].desiredPercentage : 0;
+            let currentPercentage;
+            if (costRange === 'item') {
+                // range pour item (pas de min-max)
+                currentPercentage = currentCount / 30;
+            } else {
+                currentPercentage = (costRange && costRanges[costRange].min != null && costRanges[costRange].max != null)
+                    ? currentCount / 30
+                    : 0;
+            }
             const adjustedPower = currentPercentage < desiredPercentage ? calcMediumPower * 1.8 : calcMediumPower;
-
-            // console.error('calcMediumPower:', calcMediumPower)
-            // console.error('cardPickCount :', cardPickCount )
+            console.error("numberItem :", costRanges['item'].currentCount)
+            console.error('calcMediumPower:', calcMediumPower)
+            console.error('adjustedPower :', adjustedPower)
             const cardAlreadyPicked = cardPickCount[cardNumber] >= 3;
             if (adjustedPower > bestMediumPower && !cardAlreadyPicked) {
                 bestMediumPower = adjustedPower
@@ -147,7 +239,8 @@ while (true) {
                     i
                 }
             }
-            if (costRange) costRanges[costRange].currentCount++;
+
+
 
         } else {
             if (location === -1) {
@@ -195,6 +288,13 @@ while (true) {
             cardPickCount[bestCardToChoose.cardNumber] = (cardPickCount[bestCardToChoose.cardNumber] || 0) + 1;
             console.log(`PICK ${bestCardToChoose.i}`);
             totalCardsToSelect++;
+
+            // Mise à jour de currentCount pour le costRange de la carte choisie
+            const costRange = getCostRange(bestCardToChoose.cost, bestCardToChoose.cardType);
+            if (costRange) {
+                costRanges[costRange].currentCount++;
+            }
+
         } else {
             // Si aucune carte n'a été trouvée, choisir la carte avec la puissance la plus élevée
             console.log(`PICK 0`);
@@ -206,7 +306,7 @@ while (true) {
             spellCards.forEach((spell) => {
                 // item vert
                 if (spell.cardType === 1) {
-                    let targetableCards = cards.filter(card => card.cost >= 5 && card.location === 1 && card.attack != 0);
+                    let targetableCards = cards.filter(card => card.cost >= 4 && card.location === 1 && card.attack != 0);
                     targetableCards.sort((a, b) => b.cost - a.cost);
                     let targetCard = null;
                     if (spell.abilities.includes('G') || spell.abilities.includes('C') || spell.abilities.includes('B') || spell.abilities.includes('D') || spell.abilities.includes('W') || spell.abilities.includes('L')) {
@@ -307,10 +407,10 @@ while (true) {
                 let myCard = attackableCards[i];
 
                 result += attackWithCard(myCard, opponentCards, locationCount);
-                if (canFinish(attackableCards.slice(i + 1)), opponentCards, enemyHealth) {
-                    for (let j = i + 1; j < cardsOnField.length; j++) {
-                        let attackingCard = cardsOnField[j];
-                        result += `ATTACK ${attackingCard.instanceId} -1;`;
+                if (canFinish(attackableCards.slice(i + 1), opponentCards, enemyHealth)) {
+                    for (let j = i + 1; j < attackableCards.length; j++) {
+                        let currentAttack = attackableCards[j];
+                        result += `ATTACK ${currentAttack.instanceId} -1;`;
                     }
                 }
             }
@@ -336,3 +436,4 @@ while (true) {
 
     }
 }
+
