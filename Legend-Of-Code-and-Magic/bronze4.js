@@ -5,20 +5,20 @@
 const costRanges = {
     zero: { min: 0, max: 0, desiredPercentage: 0.033, currentCount: 0 },
     un: { min: 1, max: 1, desiredPercentage: 0.1, currentCount: 0 },
-    deux: { min: 2, max: 2, desiredPercentage: 0.133, currentCount: 0 },
-    trois: { min: 3, max: 3, desiredPercentage: 0.134, currentCount: 0 },
-    quatre: { min: 4, max: 4, desiredPercentage: 0.133, currentCount: 0 },
-    cinq: { min: 5, max: 5, desiredPercentage: 0.134, currentCount: 0 },
+    deux: { min: 2, max: 2, desiredPercentage: 0.1, currentCount: 0 },
+    trois: { min: 3, max: 3, desiredPercentage: 0.167, currentCount: 0 },
+    quatre: { min: 4, max: 4, desiredPercentage: 0.166, currentCount: 0 },
+    cinq: { min: 5, max: 5, desiredPercentage: 0.167, currentCount: 0 },
     six: { min: 6, max: 6, desiredPercentage: 0.1, currentCount: 0 },
-    high: { min: 7, max: 12, desiredPercentage: 0.133, currentCount: 0 },
+    high: { min: 7, max: 12, desiredPercentage: 0.067, currentCount: 0 },
     item: { desiredPercentage: 0.1, currentCount: 0 }
 };
-const CHARGE_BONUS = 2;
-const GUARD_BONUS = 2.4;
-const BREAKTHROUGH_BONUS = 2.2;
-const DRAIN = 2.3;
-const LETHAL = 2.4;
-const WARD = 2.4;
+const CHARGE_BONUS = 1.1;
+const GUARD_BONUS = 1.6;
+const BREAKTHROUGH_BONUS = 1.2;
+const DRAIN = 1.3;
+const LETHAL = 1.5;
+const WARD = 1.5;
 let totalCardsToSelect = 0;
 let cardPickCount = {};
 let locationCount = 0;
@@ -44,7 +44,7 @@ function getCostRange(cost, cardType) {
     return null;
 }
 // Fonction pour logique d'attaque
-function attackWithCard(myCard, opponentCards, locationCount) {
+function attackWithCard(myCard, opponentCards, count) {
 
     let targetInstanceId = -1;
 
@@ -70,11 +70,11 @@ function attackWithCard(myCard, opponentCards, locationCount) {
                 : guardCards[0].instanceId; // Si aucune, attaquer la carte 'Guard' avec la plus haute défense
         } else {
             // Aucune carte 'Guard', attaquer une carte ennemie si la carte peut survivre à l'attaque
-            let vulnerableEnemies = opponentCards.filter(card => card.attack < myCard.defense && card.defense <= myCard.defense);
+            let vulnerableEnemies = opponentCards.filter(card => card.attack < myCard.defense && card.defense <= myCard.attack);
             if (vulnerableEnemies.length > 0) {
                 vulnerableEnemies.sort((a, b) => b.defense - a.defense);
                 targetInstanceId = vulnerableEnemies[0].instanceId;
-            } else if (locationCount < 6 || opponentCards.length === 0) {
+            } else if (count < 6 || opponentCards.length === 0) {
                 // Pas de carte 'Guard' ou de carte ennemie vulnérable, attaquer directement le joueur ennemi
                 targetInstanceId = -1;
             } else {
@@ -139,9 +139,6 @@ while (true) {
         const playerRune = parseInt(inputs[3]);
         const playerDraw = parseInt(inputs[4]);
         if (turn < 10) {
-            if (i == 0) {
-                myDeck = playerDeck
-            }
             if (i == 1) {
                 opponentDeck = playerDeck
             }
@@ -149,6 +146,7 @@ while (true) {
         if (i == 0) {
             myMana = playerMana
             myHealth = playerHealth
+            myDeck = playerDeck
         }
         // console.error('myMana :', myMana)
         // console.error('turn :', turn)
@@ -218,7 +216,7 @@ while (true) {
                     : 0;
             }
             const adjustedPower = currentPercentage < desiredPercentage ? calcMediumPower * 1.8 : calcMediumPower;
-            console.error("numberItem :", costRanges['item'].currentCount)
+
             console.error('calcMediumPower:', calcMediumPower)
             console.error('adjustedPower :', adjustedPower)
             const cardAlreadyPicked = cardPickCount[cardNumber] >= 3;
@@ -239,9 +237,6 @@ while (true) {
                     i
                 }
             }
-
-
-
         } else {
             if (location === -1) {
                 opponentCards.push({
@@ -322,6 +317,8 @@ while (true) {
                             }
                         }
                     } else {
+                        // Choisir la carte avec la somme la plus haute d'attaque et de défense
+                        targetableCards.sort((a, b) => (b.attack + b.defense) - (a.attack + a.defense));
                         targetCard = targetableCards[0];
                     }
                     if (targetCard && myMana >= spell.cost) {
@@ -359,7 +356,7 @@ while (true) {
                         // Mettre à jour la défense de la carte cible
                         const index = opponentCards.findIndex(card => card.instanceId === targetCard.instanceId);
                         if (index > -1) {
-                            opponentCards[index].defense -= spell.attack;
+                            opponentCards[index].defense -= spell.defense;
                             if (targetCard.defense <= 0) {
                                 opponentCards.splice(index, 1);
                             }
@@ -404,6 +401,7 @@ while (true) {
             });
         } else {
             for (let i = 0; i < attackableCards.length; i++) {
+                console.error('locationCount :', locationCount)
                 let myCard = attackableCards[i];
 
                 result += attackWithCard(myCard, opponentCards, locationCount);

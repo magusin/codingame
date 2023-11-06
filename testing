@@ -1,0 +1,38 @@
+index.js
+________
+
+const compute = (val) => {
+    return val - 1;
+};
+
+exports.compute = compute;
+
+
+
+index.spec.js
+_____________
+
+const index = require('./index.js');
+
+test('compute returns minus one', () => {
+    expect(index.compute(2)).toBe(1);
+  });
+  
+  
+package.json
+____________
+
+{
+  "name": "sample_node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jest": "^29.7.0"
+  }
+}
