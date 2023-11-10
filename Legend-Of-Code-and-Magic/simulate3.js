@@ -6,66 +6,66 @@ const cards = [
     instanceId: 33,
     location: 1,
     cardType: 0,
-    cost: 2,
+    cost: 6,
     attack: 2,
-    defense: 6,
-    abilities: '---G--',
+    defense: 2,
+    abilities: '-G----',
     myHealthChange: 0,
     opponentHealthChange: 0,
     cardDraw: 0
   },
   {
-    cardNumber: 100,
-    instanceId: 3,
+    cardNumber: 50,
+    instanceId: 15,
     location: 22,
     cardType: 0,
     cost: 3,
-    attack: 3,
-    defense: 6,
-    abilities: '---G--',
+    attack: 1,
+    defense: 5,
+    abilities: '------',
     myHealthChange: 0,
     opponentHealthChange: 0,
     cardDraw: 0
   },
   {
     cardNumber: 51,
-    instanceId: 21,
+    instanceId: 38,
     location: 1,
     cardType: 0,
     cost: 4,
-    attack: 3,
-    defense: 5,
-    abilities: '----L-',
+    attack: 1,
+    defense: 3,
+    abilities: '---G--',
     myHealthChange: 0,
     opponentHealthChange: 0,
     cardDraw: 0
   },
-  // {
-  //   cardNumber: 75,
-  //   instanceId: 13,
-  //   location: 1,
-  //   cardType: 0,
-  //   cost: 5,
-  //   attack: 6,
-  //   defense: 5,
-  //   abilities: 'B-----',
-  //   myHealthChange: 0,
-  //   opponentHealthChange: 0,
-  //   cardDraw: 0
-  // },
-  // {
-  //   cardNumber: 75,
-  //   instanceId: 17,
-  //   location: 1,
-  //   cardType: 0,
-  //   cost: 5,
-  //   attack: 6,
-  //   defense: 5,
-  //   abilities: 'B-----',
-  //   myHealthChange: 0,
-  //   opponentHealthChange: 0,
-  //   cardDraw: 0
-  // },
+  {
+    cardNumber: 20,
+    instanceId: 17,
+    location: 1,
+    cardType: 0,
+    cost: 4,
+    attack: 4,
+    defense: 4,
+    abilities: '-B----',
+    myHealthChange: 0,
+    opponentHealthChange: 0,
+    cardDraw: 0
+  },
+  {
+    cardNumber: 1,
+    instanceId: 19,
+    location: 1,
+    cardType: 0,
+    cost: 6,
+    attack: 2,
+    defense: 4,
+    abilities: '-G----',
+    myHealthChange: 0,
+    opponentHealthChange: 0,
+    cardDraw: 0
+  }
   // {
   //   cardNumber: 75,
   //   instanceId: 15,
@@ -97,39 +97,13 @@ const cards = [
 const originalOpponentCards = [
   {
     cardNumber: 23,
-    instanceId: 20,
+    instanceId: 14,
     location: -1,
     cardType: 0,
     cost: 7,
-    attack: 8,
-    defense: 6,
-    abilities: '------',
-    myHealthChange: 0,
-    opponentHealthChange: 0,
-    cardDraw: 0
-  },
-  {
-    cardNumber: 75,
-    instanceId: 26,
-    location: -1,
-    cardType: 0,
-    cost: 5,
     attack: 6,
-    defense: 5,
-    abilities: 'B-----',
-    myHealthChange: 0,
-    opponentHealthChange: 0,
-    cardDraw: 0
-  },
-  {
-    cardNumber: 16,
-    instanceId: 18,
-    location: -1,
-    cardType: 0,
-    cost: 4,
-    attack: 6,
-    defense: 2,
-    abilities: '------',
+    defense: 3,
+    abilities: '-B----',
     myHealthChange: 0,
     opponentHealthChange: 0,
     cardDraw: 0
@@ -142,44 +116,72 @@ function deepCopy(cards) {
 
 function attack(target, attacker, currentScoreKill, currentScoreDamage) {
   // console.log('attacker :', attacker, 'target :', target)
+  let initialDefenseAttacker = attacker.defense;
+  let initialDefenseTarget = target.defense;
   let died = false;
   let damageInflicted = 0;
   let damageReceived = 0;
+  let damagePlayer = 0;
   if (target.instanceId === -1) {
-":)"
+      damagePlayer = attacker.attack
   } else {
-    damageInflicted = Math.min(attacker.attack, target.defense);
-    damageReceived = Math.min(target.attack, attacker.defense);
-    target.defense -= attacker.attack;
-  attacker.defense -= target.attack;
+      damageInflicted = Math.min(attacker.attack, target.defense);
+      damageReceived = Math.min(target.attack, attacker.defense);
+      target.defense -= attacker.attack;
+      attacker.defense -= target.attack;
+
+      // Lethal ability: l'attaque est toujours suffisante pour tuer la cible
+      if (attacker.abilities.includes('L')) {
+          damageInflicted = initialDefenseTarget;
+          target.defense = 0; // La carte meurt peu importe la défense
+      }
+
+      // Breakthrough ability: le dommage excédentaire est infligé au joueur adverse
+      if (attacker.abilities.includes('B')) {
+          let excessDamage = attacker.attack - target.defense;
+          if (excessDamage > 0) {
+              damagePlayer += excessDamage;
+          }
+      }
+
+      if (target.abilities.includes('L')) {
+          damageReceived = initialDefenseAttacker
+      }
+      if (attacker.abilities.includes('W')) {
+          damageReceived = 0
+      }
+      if (target.abilities.includes('W')) {
+          damageInflected = 0
+          target.abilities = target.abilities.replace('W', '-');
+      }
   }
 
- 
+
   // console.log('damageInflicted :', damageInflicted, 'damageReceived :', damageReceived)
   // Réduit la défense de la carte cible
-  
+
   if (target.defense <= 0 && target.instanceId !== -1) {
-    // La carte cible est morte
-    currentScoreKill += 1;
-    died = true
+      // La carte cible est morte
+      currentScoreKill += 1;
+      died = true
   }
   if (attacker.defense <= 0) {
-    // La carte attaquante est morte
-    currentScoreKill -= 1;
+      // La carte attaquante est morte
+      currentScoreKill -= 1;
   }
   currentScoreDamage += damageInflicted;
   currentScoreDamage -= damageReceived;
   attacker.attack = 0;
 
-  return { 
-    scoreKill: currentScoreKill, 
-    scoreDamage: currentScoreDamage,
-    died: died
+  return {
+      scoreKill: currentScoreKill,
+      scoreDamage: currentScoreDamage,
+      died: died
   };
 }
 
 function generateSequences(myCards, oppCards, opponentHealth, sequences = [], currentSequence = [], scoreKill = 0, scoreDamage = 0) {
-  console.log('oppCards :', oppCards)
+  
   let isSequenceComplete = true;
   let totalAttackValue = myCards.reduce((total, card) => total + (currentSequence.some(seq => seq.attacker === card.instanceId) ? 0 : card.attack), 0);
   const guardsAlive = oppCards.filter(card => card.abilities.includes('G') && card.defense > 0);
@@ -274,7 +276,7 @@ function generateSequences(myCards, oppCards, opponentHealth, sequences = [], cu
 // Utiliser une copie profonde des cartes pour ne pas modifier l'original
 let myCardsCopy = deepCopy(cards);
 let opponentCardsCopy = deepCopy(originalOpponentCards);
-console.log('originalOpponentCards :', originalOpponentCards)
+
 let sequences = [];
 const newOpponentCards = [...originalOpponentCards, { instanceId: -1, abilities: '------' }];
 generateSequences(myCardsCopy, newOpponentCards, opponentHealth, sequences, [], 0, 0);
@@ -283,10 +285,10 @@ generateSequences(myCardsCopy, newOpponentCards, opponentHealth, sequences, [], 
 const bestsScoreKill = sequences.filter(seq => seq.scoreKill === Math.max(...sequences.map(seq => seq.scoreKill)));
 //Sélectionner les séquences avec les meilleurs ScoreDamage
 const bestsScoreDamage = bestsScoreKill.filter(seq => seq.scoreDamage === Math.max(...bestsScoreKill.map(seq => seq.scoreDamage)));
-const bestSequence = bestsScoreDamage[0].sequence;
+const bestSequence = bestsScoreDamage[0];
 console.log('bestSequence :', JSON.stringify(bestSequence))
-bestSequence.map(seq => {
-  console.log(`ATTACK ${seq.attacker} ${seq.target};`)
-})
+// bestSequence.map(seq => {
+  // console.log(`ATTACK ${seq.attacker} ${seq.target};`)
+// })
 // Afficher les séquences générées pour démonstration
-// console.log(JSON.stringify(sequences, null, 2));
+console.log(sequences.length);
